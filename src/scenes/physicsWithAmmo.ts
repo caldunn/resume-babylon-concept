@@ -231,14 +231,13 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
                 maxDistance: 20,
             }
         );
-        //TODO: Making a temp var to extract the body seems inefficient. Surely there is a way to transform it in a functional
-        // way. 
-        const x: Array<BABYLON.PhysicsImpostor> = [];
-        boundaryWalls.forEach((mesh) => { 
-            if (mesh.physicsImpostor != null) x.push(mesh.physicsImpostor)
-        });
+
         ballCollide.attachToMesh(sphere);
-        sphere.physicsImpostor.registerOnPhysicsCollide(x,() => !ballCollide.isPlaying && ballCollide.play());
+        
+        sphere.physicsImpostor.registerOnPhysicsCollide(
+            boundaryWalls.map((mesh) => mesh.physicsImpostor!),
+            () => !ballCollide.isPlaying && ballCollide.play()
+        );
 
         const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: this.MAP_SIZE * 1.3}, scene);
         const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
