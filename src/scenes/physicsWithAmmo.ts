@@ -43,8 +43,7 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
 
         camera.fov = 0.8;
         camera.inertia = 0;
-        // Targets the camera to a particular position. In this case the scene origin
-        
+
 
         // Attach the camera to the canvas
         camera.applyGravity = true;
@@ -61,7 +60,7 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
             { mass: 10, restitution: 0.0, friction: 0.1 }, 
             scene
         );
-        player.physicsImpostor.physicsBody.fixedRotation = true;
+        // player.physicsImpostor.physicsBody.fixedRotation = true;
         camera.setTarget(BABYLON.Vector3.Zero());
         
         // pointer
@@ -93,7 +92,7 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
         flashLight.intensity = 0.3
         const flashlightSwitchSound = new BABYLON.Sound("gunshot", "sounds/sfx/flashlight_on.mp3", scene);
 
-        const walkingSfx = new BABYLON.Sound("gunshot", "sounds/sfx/walking.mp3", scene);
+        const walkingSfx = new BABYLON.Sound("walking", "sounds/sfx/walking.mp3", scene);
         
         const onKeyPress = (event: KeyboardEvent, down: boolean): void => {
 
@@ -202,10 +201,11 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
         pillar.material = pillarMat;
         sphere.material = pillarMat;
 
+
         // Build the surrounding walls
+        const boundaryWalls: Array<BABYLON.Mesh> = [];
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        const walls = generateWalls(this.MAP_SIZE, this.MAP_SIZE);
-        walls.forEach((wall, index) => {
+        generateWalls(this.MAP_SIZE, this.MAP_SIZE).forEach((wall, index) => {
             const tempWall = BABYLON.MeshBuilder.CreateBox( `wall-${index}`, {
                 size: wall.length,
                 width: wall.width,
@@ -218,8 +218,27 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
                 BABYLON.PhysicsImpostor.BoxImpostor,
                 {mass: 0, restitution: 0.8}
             )
+            boundaryWalls.push(tempWall);
         });
-        
+
+        const ballCollide = new BABYLON.Sound(
+            "wallCollision",
+            "sounds/sfx/thud.mp3",
+            scene,
+            null, 
+            {
+                spatialSound: true,
+                maxDistance: 20,
+            }
+        );
+        //TODO: Making a temp var to extract the body seems inefficient. Surely there is a way to transform it in a functional
+        // way. 
+        const x: Array<BABYLON.PhysicsImpostor> = [];
+        boundaryWalls.forEach((mesh) => { 
+            if (mesh.physicsImpostor != null) x.push(mesh.physicsImpostor)
+        });
+        ballCollide.attachToMesh(sphere);
+        sphere.physicsImpostor.registerOnPhysicsCollide(x,() => !ballCollide.isPlaying && ballCollide.play());
 
         const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: this.MAP_SIZE * 1.3}, scene);
         const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
@@ -300,12 +319,11 @@ class PhysicsSceneWithAmmo implements CreateSceneClass {
             "sounds/ambience/MusicEerieHorrorT TEE037701_preview.mp3", 
             scene, 
             () => {
-                music.setVolume(0.4)
+                music.setVolume(0.2)
                 music.play();
             },
             {
-            loop: true,
-    
+                loop: true,
         });
         
         
